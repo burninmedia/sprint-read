@@ -1,9 +1,12 @@
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Point the worker at the bundled worker script.
-// Vite copies assets from node_modules when referenced via ?url or via explicit public dir.
-// Using the unpkg CDN fallback avoids bundler complexity.
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+// Use the worker bundled into /public so it works fully offline inside
+// Capacitor's WebView (no CDN required on-device).
+// Vite copies /public/** into /dist/** verbatim; Capacitor serves dist/ as root.
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  '../../public/pdf.worker.min.mjs',
+  import.meta.url,
+).href
 
 /**
  * Extract all text from a PDF File/Blob.

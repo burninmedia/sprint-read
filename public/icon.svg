@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#000000" rx="180"/>
+  <!-- Guide lines -->
+  <line x1="80" y1="430" x2="944" y2="430" stroke="#333333" stroke-width="2"/>
+  <line x1="80" y1="594" x2="944" y2="594" stroke="#333333" stroke-width="2"/>
+  <!-- Vertical ORP guide -->
+  <line x1="512" y1="380" x2="512" y2="644" stroke="rgba(231,76,60,0.35)" stroke-width="2"/>
+  <!-- Word: "sprint" with ORP on 'r' (index 2) -->
+  <!-- "sp" right-aligned to center -->
+  <text x="490" y="570" font-family="Georgia, serif" font-size="180" font-weight="700"
+        fill="#ffffff" text-anchor="end" letter-spacing="4">sp</text>
+  <!-- ORP letter "r" at center -->
+  <text x="512" y="570" font-family="Georgia, serif" font-size="180" font-weight="700"
+        fill="#e74c3c" text-anchor="middle" letter-spacing="4"
+        filter="url(#glow)">r</text>
+  <!-- "int" left of center -->
+  <text x="534" y="570" font-family="Georgia, serif" font-size="180" font-weight="700"
+        fill="#ffffff" text-anchor="start" letter-spacing="4">int</text>
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+</svg>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SprintRead</string>
+    <string name="title_activity_main">SprintRead</string>
+    <string name="package_name">com.sprintread.app</string>
+    <string name="custom_url_scheme">com.sprintread.app</string>
+</resources>
