@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
 import Controls from './components/Controls'
 import PDFUpload from './components/PDFUpload'
@@ -262,6 +262,7 @@ export default function App() {
   useEffect(() => () => { stopTimer(); releaseWakeLock() }, [stopTimer, releaseWakeLock])
 
   const currentWord = words[wordIndex]?.text ?? ''
+  const wordTexts = useMemo(() => words.map(w => w.text), [words])
 
   return (
     <div className="app">
@@ -271,7 +272,7 @@ export default function App() {
       {/* ── Middle 1/3: PDF canvas for PDFs, text context view for EPUBs ── */}
       {pdfDoc
         ? <PDFPageView pdfDoc={pdfDoc} words={words} currentWordIndex={wordIndex} />
-        : <TextPreview words={words.map(w => w.text)} currentIndex={wordIndex} />
+        : <TextPreview words={wordTexts} currentIndex={wordIndex} />
       }
 
       {/* ── Bottom 1/3: Controls panel ── */}
