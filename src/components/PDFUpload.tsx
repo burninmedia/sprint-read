@@ -60,7 +60,7 @@ const PDFUpload: React.FC<PDFUploadProps> = ({ onFileSelected, isLoading, fileNa
       <input
         ref={inputRef}
         type="file"
-        accept="application/pdf"
+        accept="application/pdf,.epub"
         className="pdf-upload__input"
         onChange={onInputChange}
         aria-hidden="true"
