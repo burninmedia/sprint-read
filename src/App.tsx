@@ -259,6 +259,8 @@ export default function App() {
           minWpm={minWpm}
           maxWpm={maxWpm}
           chapters={chapters}
+          fileName={fileName}
+          isLoading={isLoading}
           onPlay={handlePlay}
           onPause={handlePause}
           onStop={handleStop}
@@ -267,6 +269,8 @@ export default function App() {
           onSeek={handleSeek}
           onPrevChapter={handlePrevChapter}
           onNextChapter={handleNextChapter}
+          onFileSelected={handleFileSelected}
+          onTocOpen={() => {}}
         />
       </div>
     </div>

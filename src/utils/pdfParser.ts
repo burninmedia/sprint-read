@@ -22,6 +22,7 @@ export interface WordToken {
 export interface Chapter {
   title: string
   wordIndex: number
+  level: number // 0 = top-level, 1 = sub-chapter, etc.
 }
 
 export interface ParsedPdf {
@@ -83,23 +84,35 @@ export async function parsePdf(file: File): Promise<ParsedPdf> {
   try {
     const outline = await pdf.getOutline()
     if (outline && outline.length > 0) {
-      for (const item of outline) {
-        if (!item.dest && !item.url) continue
-        try {
-          let dest = item.dest
-          if (typeof dest === 'string') {
-            dest = await pdf.getDestination(dest)
+      // Recursive traversal to capture nested outline items
+      const processItems = async (
+        items: typeof outline,
+        level: number,
+      ): Promise<void> => {
+        for (const item of items) {
+          if (item.dest || item.url) {
+            try {
+              let dest = item.dest
+              if (typeof dest === 'string') {
+                dest = await pdf.getDestination(dest)
+              }
+              if (dest && Array.isArray(dest) && dest.length > 0) {
+                const ref = dest[0]
+                const pageIndex = await pdf.getPageIndex(ref)
+                const pageNum = pageIndex + 1
+                const wordIndex = pageFirstWordIndex.get(pageNum) ?? 0
+                chapters.push({ title: item.title ?? `Page ${pageNum}`, wordIndex, level })
+              }
+            } catch {
+              // skip outline items that can't be resolved
+            }
           }
-          if (!dest || !Array.isArray(dest) || dest.length === 0) continue
-          const ref = dest[0]
-          const pageIndex = await pdf.getPageIndex(ref)
-          const pageNum = pageIndex + 1 // getPageIndex is 0-based
-          const wordIndex = pageFirstWordIndex.get(pageNum) ?? 0
-          chapters.push({ title: item.title ?? `Page ${pageNum}`, wordIndex })
-        } catch {
-          // skip outline items that can't be resolved
+          if (item.items && item.items.length > 0) {
+            await processItems(item.items, level + 1)
+          }
         }
       }
+      await processItems(outline, 0)
     }
   } catch {
     // outline not available
@@ -112,7 +125,7 @@ export async function parsePdf(file: File): Promise<ParsedPdf> {
       if (/^chapter$/i.test(w.text)) {
         const next = words[i + 1]
         if (next && /^(\d+|[IVXLC]+|one|two|three|four|five|six|seven|eight|nine|ten)$/i.test(next.text)) {
-          chapters.push({ title: `${w.text} ${next.text}`, wordIndex: i })
+          chapters.push({ title: `${w.text} ${next.text}`, wordIndex: i, level: 0 })
         }
       }
     }
