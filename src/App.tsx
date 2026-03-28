@@ -4,6 +4,7 @@ import Controls from './components/Controls'
 import PDFUpload from './components/PDFUpload'
 import PDFPageView from './components/PDFPageView'
 import TextPreview from './components/TextPreview'
+import type { TextPreviewHandle } from './components/TextPreview'
 import TocDrawer from './components/TocDrawer'
 import WordDisplay from './components/WordDisplay'
 import { parsePdf } from './utils/pdfParser'
@@ -31,6 +32,7 @@ export default function App() {
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
+  const textPreviewRef = useRef<TextPreviewHandle>(null)
   const wordIndexRef = useRef(wordIndex)
   const wordsRef = useRef(words)
   const playStateRef = useRef(playState)
@@ -97,6 +99,7 @@ export default function App() {
         if (playStateRef.current !== 'playing') return
 
         setWordIndex(index)
+        textPreviewRef.current?.updateHighlight(index)
 
         // Rolling 10s WPM average
         const now2 = performance.now()
@@ -274,7 +277,7 @@ export default function App() {
       {/* ── Middle 1/3: PDF canvas for PDFs, text context view for EPUBs ── */}
       {pdfDoc
         ? <PDFPageView pdfDoc={pdfDoc} words={words} currentWordIndex={wordIndex} />
-        : <TextPreview words={wordTexts} currentIndex={wordIndex} />
+        : <TextPreview ref={textPreviewRef} words={wordTexts} currentIndex={wordIndex} />
       }
 
       {/* ── Bottom 1/3: Controls panel ── */}
