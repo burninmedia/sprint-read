@@ -37,7 +37,7 @@ const Controls: React.FC<ControlsProps> = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file && file.type === 'application/pdf') onFileSelected(file)
+    if (file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.epub'))) onFileSelected(file)
     e.target.value = ''
   }
 
