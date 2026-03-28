@@ -101,8 +101,9 @@ Thumbs.db
 ehthumbs.db
 desktop.ini
 
-# Cordova plugins for Capacitor
-capacitor-cordova-android-plugins
+# Cordova plugins for Capacitor — only ignore generated src, keep the gradle stubs
+# capacitor-cordova-android-plugins  ← committed so Android Studio works without running cap sync
+capacitor-cordova-android-plugins/src
 
 # Copied web assets
 app/src/main/assets/public
