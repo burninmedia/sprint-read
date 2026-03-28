@@ -7,12 +7,15 @@ interface ControlsProps {
   totalWords: number
   minWpm: number
   maxWpm: number
+  chapters: Array<{ title: string; wordIndex: number }>
   onPlay: () => void
   onPause: () => void
   onStop: () => void
   onMinWpmChange: (v: number) => void
   onMaxWpmChange: (v: number) => void
   onSeek: (index: number) => void
+  onPrevChapter: () => void
+  onNextChapter: () => void
 }
 
 const Controls: React.FC<ControlsProps> = ({
@@ -22,19 +25,33 @@ const Controls: React.FC<ControlsProps> = ({
   totalWords,
   minWpm,
   maxWpm,
+  chapters,
   onPlay,
   onPause,
   onStop,
   onMinWpmChange,
   onMaxWpmChange,
   onSeek,
+  onPrevChapter,
+  onNextChapter,
 }) => {
   const progress = totalWords > 0 ? (wordIndex / Math.max(totalWords - 1, 1)) * 100 : 0
+  const hasChapters = chapters.length > 0
 
   return (
     <div className="controls">
       {/* Playback buttons */}
       <div className="controls__buttons">
+        <button
+          className="btn btn--icon"
+          onClick={onPrevChapter}
+          disabled={!hasText || !hasChapters}
+          title="Previous chapter"
+          aria-label="Previous chapter"
+        >
+          <SkipPrevIcon />
+        </button>
+
         <button
           className="btn btn--icon"
           onClick={onStop}
@@ -53,6 +70,16 @@ const Controls: React.FC<ControlsProps> = ({
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? <PauseIcon /> : <PlayIcon />}
+        </button>
+
+        <button
+          className="btn btn--icon"
+          onClick={onNextChapter}
+          disabled={!hasText || !hasChapters}
+          title="Next chapter"
+          aria-label="Next chapter"
+        >
+          <SkipNextIcon />
         </button>
       </div>
 
@@ -142,6 +169,18 @@ const PauseIcon = () => (
 const StopIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
     <path d="M6 6h12v12H6z" />
+  </svg>
+)
+
+const SkipPrevIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+    <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
+  </svg>
+)
+
+const SkipNextIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+    <path d="M6 18l8.5-6L6 6v12zm2.5-6 8.5 6V6z M16 6h2v12h-2z" />
   </svg>
 )
 

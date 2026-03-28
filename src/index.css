@@ -123,12 +123,12 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ============================================================
-   Word Display – top ~55% of screen
+   Word Display – top 1/3 of screen
    ============================================================ */
 
 .word-display {
   position: relative;
-  flex: 0 0 55%;
+  flex: 0 0 33.333%;
   background: #000;
   display: flex;
   align-items: center;
@@ -233,11 +233,51 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ============================================================
-   Bottom panel – bottom ~45% of screen
+   PDF Page View – middle 1/3 of screen
+   ============================================================ */
+
+.pdf-page-view {
+  flex: 0 0 33.333%;
+  background: #000;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.pdf-page-view::-webkit-scrollbar {
+  width: 6px;
+}
+
+.pdf-page-view::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pdf-page-view::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.pdf-page-view__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ============================================================
+   Bottom panel – bottom 1/3 of screen
    ============================================================ */
 
 .bottom-panel {
-  flex: 0 0 45%;
+  flex: 0 0 33.333%;
   display: flex;
   flex-direction: column;
   background: var(--bg-panel);
