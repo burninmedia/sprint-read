@@ -79,7 +79,7 @@ const Controls: React.FC<ControlsProps> = ({
           </button>
 
           {/* PDF file picker */}
-          <input ref={fileInputRef} type="file" accept="application/pdf"
+          <input ref={fileInputRef} type="file" accept="application/pdf,.epub"
             style={{ display: 'none' }} onChange={handleFileChange} />
           <button className="btn btn--icon btn--file"
             onClick={() => fileInputRef.current?.click()}

@@ -5,6 +5,7 @@ import PDFUpload from './components/PDFUpload'
 import PDFPageView from './components/PDFPageView'
 import WordDisplay from './components/WordDisplay'
 import { parsePdf } from './utils/pdfParser'
+import { parseEpub } from './utils/epubParser'
 import type { Chapter, WordToken } from './utils/pdfParser'
 import { buildDelayTable } from './utils/speedRamp'
 
@@ -203,7 +204,8 @@ export default function App() {
       fileNameRef.current = file.name
 
       try {
-        const parsed = await parsePdf(file)
+        const isEpub = file.name.toLowerCase().endsWith('.epub')
+        const parsed = isEpub ? await parseEpub(file) : await parsePdf(file)
         setWords(parsed.words)
         wordsRef.current = parsed.words
         setPdfDoc(parsed.pdfDoc)
@@ -217,8 +219,8 @@ export default function App() {
         setWordIndex(startIndex)
         wordIndexRef.current = startIndex
       } catch (err) {
-        console.error('Failed to parse PDF:', err)
-        alert('Failed to extract text from this PDF. Try a different file.')
+        console.error('Failed to parse file:', err)
+        alert('Failed to extract text from this file. Try a different file.')
         setFileName(null)
         fileNameRef.current = null
       } finally {
@@ -265,8 +267,8 @@ export default function App() {
       {/* ── Top 1/3: Word reader ── */}
       <WordDisplay word={currentWord} wpm={currentWpm} isEmpty={words.length === 0} />
 
-      {/* ── Middle 1/3: PDF page canvas preview ── */}
-      <PDFPageView pdfDoc={pdfDoc} words={words} currentWordIndex={wordIndex} />
+      {/* ── Middle 1/3: PDF page canvas preview (hidden for EPUB) ── */}
+      {pdfDoc && <PDFPageView pdfDoc={pdfDoc} words={words} currentWordIndex={wordIndex} />}
 
       {/* ── Bottom 1/3: Controls panel ── */}
       <div className="bottom-panel">
