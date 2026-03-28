@@ -26,6 +26,7 @@ export default function App() {
   const [chapters, setChapters] = useState<Chapter[]>([])
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null)
   const wordIndexRef = useRef(wordIndex)
   const wordsRef = useRef(words)
   const playStateRef = useRef(playState)
@@ -42,6 +43,31 @@ export default function App() {
   minWpmRef.current = minWpm
   maxWpmRef.current = maxWpm
   fileNameRef.current = fileName
+
+  const acquireWakeLock = useCallback(async () => {
+    if (!('wakeLock' in navigator)) return
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request('screen')
+    } catch {
+      // wake lock denied (e.g. battery saver) — ignore silently
+    }
+  }, [])
+
+  const releaseWakeLock = useCallback(() => {
+    wakeLockRef.current?.release()
+    wakeLockRef.current = null
+  }, [])
+
+  // Re-acquire wake lock if the page becomes visible again (e.g. tab switch)
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && playStateRef.current === 'playing') {
+        acquireWakeLock()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [acquireWakeLock])
 
   const stopTimer = useCallback(() => {
     if (timerRef.current != null) {
@@ -94,8 +120,7 @@ export default function App() {
   const startPlaying = useCallback(
     (fromIndex: number) => {
       stopTimer()
-      // Always restart the ramp from minWpm at the current position so the
-      // speed never starts above the configured minimum.
+      acquireWakeLock()
       const wordTexts = wordsRef.current.map((w) => w.text)
       const delayTable = buildDelayTable(
         wordTexts,
@@ -106,7 +131,7 @@ export default function App() {
       setPlayState('playing')
       scheduleNext(fromIndex, delayTable, performance.now())
     },
-    [stopTimer, scheduleNext],
+    [stopTimer, acquireWakeLock, scheduleNext],
   )
 
   // BUG 2 FIX: always resume from current position
@@ -118,16 +143,18 @@ export default function App() {
 
   const handlePause = useCallback(() => {
     stopTimer()
+    releaseWakeLock()
     setPlayState('paused')
-  }, [stopTimer])
+  }, [stopTimer, releaseWakeLock])
 
   const handleStop = useCallback(() => {
     stopTimer()
+    releaseWakeLock()
     setPlayState('idle')
     setWordIndex(0)
     wordIndexRef.current = 0
     setCurrentWpm(minWpmRef.current)
-  }, [stopTimer])
+  }, [stopTimer, releaseWakeLock])
 
   const handleSeek = useCallback(
     (index: number) => {
@@ -229,7 +256,7 @@ export default function App() {
   }, [chapters, handleSeek])
 
   // Cleanup on unmount
-  useEffect(() => () => stopTimer(), [stopTimer])
+  useEffect(() => () => { stopTimer(); releaseWakeLock() }, [stopTimer, releaseWakeLock])
 
   const currentWord = words[wordIndex]?.text ?? ''
 
