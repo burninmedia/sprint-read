@@ -191,12 +191,7 @@ input[type="range"]::-moz-range-thumb {
   letter-spacing: 0.02em;
   line-height: 1;
   color: #fff;
-  opacity: 0;
-  transition: opacity 0.055s ease-in-out;
-}
-
-.orp-word--visible {
-  opacity: 1;
+  /* No opacity transition — fades cause words to vanish at high WPM */
 }
 
 .orp-before {
@@ -282,7 +277,9 @@ input[type="range"]::-moz-range-thumb {
   flex-direction: column;
   background: var(--bg-panel);
   border-top: 1px solid var(--border);
-  overflow: hidden;
+  /* Scrollable so sliders are always reachable on small screens */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ============================================================
@@ -293,8 +290,8 @@ input[type="range"]::-moz-range-thumb {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 10px 16px;
+  gap: 8px;
+  padding: 8px 12px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;

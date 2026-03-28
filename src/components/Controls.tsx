@@ -172,15 +172,19 @@ const StopIcon = () => (
   </svg>
 )
 
+// |◄  vertical bar on left + left-pointing triangle
 const SkipPrevIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-    <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
+    <rect x="5" y="6" width="2" height="12" rx="0.5" />
+    <polygon points="7,12 17,6 17,18" />
   </svg>
 )
 
+// ►|  right-pointing triangle + vertical bar on right
 const SkipNextIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-    <path d="M6 18l8.5-6L6 6v12zm2.5-6 8.5 6V6z M16 6h2v12h-2z" />
+    <polygon points="7,6 7,18 17,12" />
+    <rect x="17" y="6" width="2" height="12" rx="0.5" />
   </svg>
 )
 
