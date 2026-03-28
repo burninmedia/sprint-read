@@ -24,13 +24,18 @@ const TocDrawer: React.FC<TocDrawerProps> = ({
   }
 
   return (
-    <div className="toc-overlay" onClick={onClose}>
-      <div className="toc-drawer" onClick={e => e.stopPropagation()}>
+    <div className="toc-overlay">
+      <div className="toc-drawer">
         <div className="toc-drawer__header">
           <span className="toc-drawer__title">Table of Contents</span>
           <button className="toc-drawer__close" onClick={onClose} aria-label="Close">✕</button>
         </div>
         <div className="toc-drawer__list">
+          {chapters.length === 0 && (
+            <div style={{ padding: '24px 16px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+              No chapters found in this file.
+            </div>
+          )}
           {chapters.map((ch, i) => {
             const pct = totalWords > 0 ? Math.round((ch.wordIndex / totalWords) * 100) : 0
             return (
