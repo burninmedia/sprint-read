@@ -5,13 +5,11 @@ interface TextPreviewProps {
   currentIndex: number
 }
 
-// Words rendered before and after the current position.
-// Small enough to keep DOM tiny; large enough to feel like context.
 const BEFORE = 60
 const AFTER = 120
 const WORDS_PER_LINE = 12
 
-const TextPreview: React.FC<TextPreviewProps> = memo(({ words, currentIndex }) => {
+const TextPreview: React.FC<TextPreviewProps> = ({ words, currentIndex }) => {
   const activeRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
@@ -52,8 +50,13 @@ const TextPreview: React.FC<TextPreviewProps> = memo(({ words, currentIndex }) =
       </div>
     </div>
   )
+}
+
+// Only re-render when the line changes (every WORDS_PER_LINE words),
+// not on every single word tick. The top word panel handles per-word display.
+export default memo(TextPreview, (prev, next) => {
+  if (prev.words !== next.words) return false
+  const prevLine = Math.floor(prev.currentIndex / WORDS_PER_LINE)
+  const nextLine = Math.floor(next.currentIndex / WORDS_PER_LINE)
+  return prevLine === nextLine
 })
-
-TextPreview.displayName = 'TextPreview'
-
-export default TextPreview
