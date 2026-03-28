@@ -12,8 +12,10 @@ const PDFUpload: React.FC<PDFUploadProps> = ({ onFileSelected, isLoading, fileNa
 
   const handleFile = useCallback(
     (file: File) => {
-      if (file.type !== 'application/pdf') {
-        alert('Please upload a PDF file.')
+      const name = file.name.toLowerCase()
+      const validType = file.type === 'application/pdf' || name.endsWith('.epub')
+      if (!validType) {
+        alert('Please upload a PDF or EPUB file.')
         return
       }
       onFileSelected(file)
@@ -55,7 +57,7 @@ const PDFUpload: React.FC<PDFUploadProps> = ({ onFileSelected, isLoading, fileNa
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && !isLoading && inputRef.current?.click()}
-      aria-label="Upload PDF"
+      aria-label="Upload PDF or EPUB"
     >
       <input
         ref={inputRef}
@@ -81,7 +83,7 @@ const PDFUpload: React.FC<PDFUploadProps> = ({ onFileSelected, isLoading, fileNa
       ) : (
         <div className="pdf-upload__content">
           <UploadIcon />
-          <span className="pdf-upload__text">Drop a PDF here or click to browse</span>
+          <span className="pdf-upload__text">Drop a PDF or EPUB here or click to browse</span>
         </div>
       )}
     </div>
