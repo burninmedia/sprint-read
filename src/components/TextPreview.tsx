@@ -11,9 +11,15 @@ const WORDS_PER_LINE = 12
 
 const TextPreview: React.FC<TextPreviewProps> = ({ words, currentIndex }) => {
   const activeRef = useRef<HTMLSpanElement>(null)
+  const lastScrollLineRef = useRef(-1)
 
+  // Scroll only when the line changes, not every word
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const line = Math.floor(currentIndex / WORDS_PER_LINE)
+    if (line !== lastScrollLineRef.current) {
+      activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      lastScrollLineRef.current = line
+    }
   }, [currentIndex])
 
   if (words.length === 0) {
@@ -52,11 +58,6 @@ const TextPreview: React.FC<TextPreviewProps> = ({ words, currentIndex }) => {
   )
 }
 
-// Only re-render when the line changes (every WORDS_PER_LINE words),
-// not on every single word tick. The top word panel handles per-word display.
-export default memo(TextPreview, (prev, next) => {
-  if (prev.words !== next.words) return false
-  const prevLine = Math.floor(prev.currentIndex / WORDS_PER_LINE)
-  const nextLine = Math.floor(next.currentIndex / WORDS_PER_LINE)
-  return prevLine === nextLine
-})
+// Only skip re-renders when words array reference changes (new document loaded).
+// Per-word re-renders are fine — the window is only 180 spans.
+export default memo(TextPreview, (prev, next) => prev.words === next.words && prev.currentIndex === next.currentIndex)
