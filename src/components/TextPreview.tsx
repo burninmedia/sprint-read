@@ -25,7 +25,7 @@ const TextPreview: React.FC<TextPreviewProps> = ({ words, currentIndex }) => {
   if (words.length === 0) {
     return (
       <div className="text-preview text-preview--empty">
-        <span>Text preview will appear here after loading a PDF</span>
+        <span>Text preview will appear here after loading a file</span>
       </div>
     )
   }
