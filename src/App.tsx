@@ -3,6 +3,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist'
 import Controls from './components/Controls'
 import PDFUpload from './components/PDFUpload'
 import PDFPageView from './components/PDFPageView'
+import TextPreview from './components/TextPreview'
 import WordDisplay from './components/WordDisplay'
 import { parsePdf } from './utils/pdfParser'
 import { parseEpub } from './utils/epubParser'
@@ -267,8 +268,11 @@ export default function App() {
       {/* ── Top 1/3: Word reader ── */}
       <WordDisplay word={currentWord} wpm={currentWpm} isEmpty={words.length === 0} />
 
-      {/* ── Middle 1/3: PDF page canvas preview (hidden for EPUB) ── */}
-      {pdfDoc && <PDFPageView pdfDoc={pdfDoc} words={words} currentWordIndex={wordIndex} />}
+      {/* ── Middle 1/3: PDF canvas for PDFs, text context view for EPUBs ── */}
+      {pdfDoc
+        ? <PDFPageView pdfDoc={pdfDoc} words={words} currentWordIndex={wordIndex} />
+        : <TextPreview words={words.map(w => w.text)} currentIndex={wordIndex} />
+      }
 
       {/* ── Bottom 1/3: Controls panel ── */}
       <div className="bottom-panel">
