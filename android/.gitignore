@@ -105,10 +105,8 @@ desktop.ini
 # capacitor-cordova-android-plugins  ← committed so Android Studio works without running cap sync
 capacitor-cordova-android-plugins/src
 
-# Copied web assets
-app/src/main/assets/public
-
-# Generated Config files
-app/src/main/assets/capacitor.config.json
-app/src/main/assets/capacitor.plugins.json
+# Generated Config files (keep these — needed for Android Studio to build without npm)
+# app/src/main/assets/public           ← committed so the app loads without running cap sync
+# app/src/main/assets/capacitor.config.json
+# app/src/main/assets/capacitor.plugins.json
 app/src/main/res/xml/config.xml
