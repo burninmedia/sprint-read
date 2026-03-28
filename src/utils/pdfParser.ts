@@ -1,4 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist'
+import type { PDFDocumentProxy } from 'pdfjs-dist'
 
 // Use the worker bundled into /public so it works fully offline inside
 // Capacitor's WebView (no CDN required on-device).
@@ -8,42 +9,114 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).href
 
-/**
- * Extract all text from a PDF File/Blob.
- * Returns the full text as a single string with pages separated by newlines.
- */
-export async function extractTextFromPdf(file: File): Promise<string> {
+export interface WordToken {
+  text: string
+  pageNum: number // 1-based
+  // position in PDF user-space coordinates (bottom-left origin)
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+export interface Chapter {
+  title: string
+  wordIndex: number
+}
+
+export interface ParsedPdf {
+  pdfDoc: PDFDocumentProxy // keep alive for rendering
+  words: WordToken[]
+  chapters: Chapter[]
+}
+
+export async function parsePdf(file: File): Promise<ParsedPdf> {
   const arrayBuffer = await file.arrayBuffer()
   const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer })
   const pdf = await loadingTask.promise
 
-  const pageTexts: string[] = []
+  const words: WordToken[] = []
+
+  // Track first word index per page for chapter fallback
+  const pageFirstWordIndex: Map<number, number> = new Map()
 
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum)
     const textContent = await page.getTextContent()
 
-    // Join text items, preserving rough line structure
-    const pageText = textContent.items
-      .map((item) => {
-        if ('str' in item) return item.str
-        return ''
-      })
-      .join(' ')
+    pageFirstWordIndex.set(pageNum, words.length)
 
-    pageTexts.push(pageText)
+    for (const item of textContent.items) {
+      if (!('str' in item) || !item.str.trim()) continue
+
+      // transform: [scaleX, skewX, skewY, scaleY, tx, ty]
+      const tx = item.transform[4] as number
+      const ty = item.transform[5] as number
+      const itemWidth = (item as { width?: number }).width ?? 0
+      const itemHeight = (item as { height?: number }).height ?? 0
+      const str = item.str
+
+      // Split item string into individual words and estimate x offset proportionally
+      const rawTokens = str.split(/\s+/)
+      let charOffset = 0
+
+      for (const token of rawTokens) {
+        if (!token) continue
+        const wordX = tx + (charOffset / Math.max(str.length, 1)) * itemWidth
+        words.push({
+          text: token,
+          pageNum,
+          x: wordX,
+          y: ty,
+          w: (token.length / Math.max(str.length, 1)) * itemWidth,
+          h: itemHeight,
+        })
+        // +1 for the space
+        charOffset += token.length + 1
+      }
+    }
   }
 
-  return pageTexts.join('\n\n')
-}
+  // --- Chapters ---
+  const chapters: Chapter[] = []
 
-/**
- * Tokenise extracted PDF text into an array of displayable words.
- * Strips empty tokens and normalises whitespace.
- */
-export function tokeniseWords(text: string): string[] {
-  return text
-    .split(/\s+/)
-    .map((w) => w.trim())
-    .filter((w) => w.length > 0)
+  try {
+    const outline = await pdf.getOutline()
+    if (outline && outline.length > 0) {
+      for (const item of outline) {
+        if (!item.dest && !item.url) continue
+        try {
+          let dest = item.dest
+          if (typeof dest === 'string') {
+            dest = await pdf.getDestination(dest)
+          }
+          if (!dest || !Array.isArray(dest) || dest.length === 0) continue
+          const ref = dest[0]
+          const pageIndex = await pdf.getPageIndex(ref)
+          const pageNum = pageIndex + 1 // getPageIndex is 0-based
+          const wordIndex = pageFirstWordIndex.get(pageNum) ?? 0
+          chapters.push({ title: item.title ?? `Page ${pageNum}`, wordIndex })
+        } catch {
+          // skip outline items that can't be resolved
+        }
+      }
+    }
+  } catch {
+    // outline not available
+  }
+
+  // Fallback: text-based chapter detection if no outline chapters found
+  if (chapters.length === 0) {
+    for (let i = 0; i < words.length - 1; i++) {
+      const w = words[i]
+      if (/^chapter$/i.test(w.text)) {
+        const next = words[i + 1]
+        if (next && /^(\d+|[IVXLC]+|one|two|three|four|five|six|seven|eight|nine|ten)$/i.test(next.text)) {
+          chapters.push({ title: `${w.text} ${next.text}`, wordIndex: i })
+        }
+      }
+    }
+  }
+
+  return { pdfDoc: pdf, words, chapters }
 }
