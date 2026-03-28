@@ -69,7 +69,14 @@ export default function App() {
   const startPlaying = useCallback(
     (fromIndex: number) => {
       stopTimer()
-      const delayTable = buildDelayTable(wordsRef.current, minWpmRef.current, maxWpmRef.current)
+      // Always restart the ramp from minWpm at the current position so the
+      // speed never starts above the configured minimum.
+      const delayTable = buildDelayTable(
+        wordsRef.current,
+        minWpmRef.current,
+        maxWpmRef.current,
+        fromIndex,
+      )
       setPlayState('playing')
       scheduleNext(fromIndex, delayTable)
     },

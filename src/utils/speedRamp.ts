@@ -63,13 +63,35 @@ export function getWordDelay(
 }
 
 /**
- * Pre-calculate all word delays for the entire text.
- * Returns an array of delays (ms) for each word index.
+ * Pre-calculate all word delays for the text starting at fromIndex.
+ *
+ * Speed always begins at minWpm (regardless of fromIndex) and ramps to maxWpm
+ * over rampMs of cumulative display time (~60 seconds by default).
+ * Words before fromIndex get a 0-length placeholder so array indices stay aligned.
  */
 export function buildDelayTable(
   words: string[],
   minWpm: number,
   maxWpm: number,
+  fromIndex = 0,
+  rampMs = 60_000,
 ): number[] {
-  return words.map((word, i) => getWordDelay(i, words.length, minWpm, maxWpm, word))
+  // Placeholders for words we won't play
+  const delays: number[] = new Array(fromIndex).fill(0)
+
+  let elapsedMs = 0
+
+  for (let i = fromIndex; i < words.length; i++) {
+    // Ramp progress is time-based so it always takes ~rampMs to reach maxWpm,
+    // regardless of which word in the document we started from.
+    const rampProgress = Math.min(elapsedMs / rampMs, 1)
+    const easedProgress = easeInOut(rampProgress)
+    const currentWpm = minWpm + easedProgress * (maxWpm - minWpm)
+
+    const delay = (60_000 / currentWpm) * getWordMultiplier(words[i])
+    delays.push(delay)
+    elapsedMs += delay
+  }
+
+  return delays
 }

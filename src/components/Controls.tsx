@@ -85,14 +85,15 @@ const Controls: React.FC<ControlsProps> = ({
           <input
             type="range"
             className="speed-slider"
-            min={60}
-            max={600}
-            step={10}
+            min={100}
+            max={500}
+            step={20}
             value={minWpm}
             onChange={(e) => {
               const v = Number(e.target.value)
               onMinWpmChange(v)
-              if (v > maxWpm) onMaxWpmChange(v)
+              // Keep max at least 100 WPM above min
+              if (v + 100 > maxWpm) onMaxWpmChange(v + 100)
             }}
             aria-label="Minimum WPM"
           />
@@ -106,14 +107,15 @@ const Controls: React.FC<ControlsProps> = ({
           <input
             type="range"
             className="speed-slider"
-            min={100}
-            max={1500}
-            step={10}
+            min={200}
+            max={1200}
+            step={20}
             value={maxWpm}
             onChange={(e) => {
               const v = Number(e.target.value)
               onMaxWpmChange(v)
-              if (v < minWpm) onMinWpmChange(v)
+              // Keep min at least 100 WPM below max
+              if (v - 100 < minWpm) onMinWpmChange(Math.max(100, v - 100))
             }}
             aria-label="Maximum WPM"
           />
