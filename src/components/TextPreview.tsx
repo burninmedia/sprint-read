@@ -1,25 +1,21 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, memo } from 'react'
 
 interface TextPreviewProps {
   words: string[]
   currentIndex: number
 }
 
+// Words rendered before and after the current position.
+// Small enough to keep DOM tiny; large enough to feel like context.
+const BEFORE = 60
+const AFTER = 120
 const WORDS_PER_LINE = 12
-const CONTEXT_LINES = 3
 
-const TextPreview: React.FC<TextPreviewProps> = ({ words, currentIndex }) => {
-  const containerRef = useRef<HTMLDivElement>(null)
+const TextPreview: React.FC<TextPreviewProps> = memo(({ words, currentIndex }) => {
   const activeRef = useRef<HTMLSpanElement>(null)
 
-  // Auto-scroll to keep current word visible
   useEffect(() => {
-    if (activeRef.current && containerRef.current) {
-      activeRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      })
-    }
+    activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [currentIndex])
 
   if (words.length === 0) {
@@ -30,10 +26,15 @@ const TextPreview: React.FC<TextPreviewProps> = ({ words, currentIndex }) => {
     )
   }
 
+  const start = Math.max(0, currentIndex - BEFORE)
+  const end = Math.min(words.length, currentIndex + AFTER)
+  const slice = words.slice(start, end)
+
   return (
-    <div className="text-preview" ref={containerRef}>
+    <div className="text-preview">
       <div className="text-preview__content">
-        {words.map((word, i) => {
+        {slice.map((word, si) => {
+          const i = start + si
           const isActive = i === currentIndex
           const isPast = i < currentIndex
           return (
@@ -44,7 +45,6 @@ const TextPreview: React.FC<TextPreviewProps> = ({ words, currentIndex }) => {
               >
                 {word}
               </span>
-              {/* Add line break hint every N words for readability */}
               {(i + 1) % WORDS_PER_LINE === 0 && <br />}
             </React.Fragment>
           )
@@ -52,7 +52,8 @@ const TextPreview: React.FC<TextPreviewProps> = ({ words, currentIndex }) => {
       </div>
     </div>
   )
-}
+})
 
-export { CONTEXT_LINES }
+TextPreview.displayName = 'TextPreview'
+
 export default TextPreview
