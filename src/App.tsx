@@ -4,6 +4,7 @@ import Controls from './components/Controls'
 import PDFUpload from './components/PDFUpload'
 import PDFPageView from './components/PDFPageView'
 import TextPreview from './components/TextPreview'
+import TocDrawer from './components/TocDrawer'
 import WordDisplay from './components/WordDisplay'
 import { parsePdf } from './utils/pdfParser'
 import { parseEpub } from './utils/epubParser'
@@ -26,6 +27,7 @@ export default function App() {
   const [currentWpm, setCurrentWpm] = useState(DEFAULT_MIN_WPM)
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const [chapters, setChapters] = useState<Chapter[]>([])
+  const [showToc, setShowToc] = useState(false)
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
@@ -304,9 +306,19 @@ export default function App() {
           onPrevChapter={handlePrevChapter}
           onNextChapter={handleNextChapter}
           onFileSelected={handleFileSelected}
-          onTocOpen={() => {}}
+          onTocOpen={() => setShowToc(true)}
         />
       </div>
+      {/* TOC drawer – rendered outside panels so it overlays everything */}
+      {showToc && (
+        <TocDrawer
+          chapters={chapters}
+          currentWordIndex={wordIndex}
+          totalWords={words.length}
+          onSeek={handleSeek}
+          onClose={() => setShowToc(false)}
+        />
+      )}
     </div>
   )
 }
