@@ -22,7 +22,7 @@ const WordDisplay: React.FC<WordDisplayProps> = ({ word, wpm, isEmpty = false })
 
       {isEmpty ? (
         <div className="word-display__empty">
-          Load a PDF below to start speed reading
+          Load a PDF or EPUB to start speed reading
         </div>
       ) : (
         <div className="orp-word">
