@@ -555,7 +555,7 @@ input[type="range"]::-moz-range-thumb {
 
 .toc-drawer {
   width: 100%;
-  max-height: 70vh;
+  max-height: 85vh;
   background: #111;
   border-radius: 16px 16px 0 0;
   border-top: 1px solid var(--border);
@@ -607,15 +607,17 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   align-items: baseline;
   width: 100%;
-  padding: 10px 16px 10px calc(16px + var(--depth, 0) * 16px);
+  padding: 10px 16px 10px calc(16px + var(--depth, 0) * 20px);
   background: none;
   border: none;
   color: var(--text-primary);
-  font-size: 0.85rem;
+  font-size: calc(0.88rem - var(--depth, 0) * 0.04rem);
   text-align: left;
   cursor: pointer;
   border-bottom: 1px solid var(--border);
   gap: 8px;
+  /* Sub-items slightly dimmer */
+  opacity: calc(1 - var(--depth, 0) * 0.12);
 }
 
 .toc-item:active {
@@ -625,6 +627,7 @@ input[type="range"]::-moz-range-thumb {
 .toc-item--active {
   color: var(--accent);
   font-weight: 600;
+  opacity: 1;
 }
 
 .toc-item__title {
