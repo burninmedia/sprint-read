@@ -119,18 +119,48 @@ export async function parseEpub(file: File): Promise<ParsedEpub> {
   const navPath = navId ? resolve(opfPath, xmlAttr(navId, 'href')) : null
 
   if (navPath && zip.file(navPath)) {
-    // EPUB 3 NAV
+    // EPUB 3 NAV — flat querySelectorAll, depth by counting ancestor <ol> elements
     const navHtml = await zip.file(navPath)!.async('text')
     const navDoc = parseHtml(navHtml)
-    const toc = navDoc.querySelector('nav[epub\\:type="toc"], nav[role="doc-toc"], nav')
+    // Match any nav with a toc-related type/role, fall back to first nav
+    const toc =
+      navDoc.querySelector('nav[epub\\:type="toc"]') ??
+      navDoc.querySelector('nav[role="doc-toc"]') ??
+      navDoc.querySelector('nav')
     if (toc) {
-      processNavItems(toc.querySelectorAll(':scope > ol > li'), navPath, 0)
+      for (const li of Array.from(toc.querySelectorAll('li'))) {
+        const a = li.querySelector('a') as HTMLAnchorElement | null
+        if (!a) continue
+        const href = a.getAttribute('href') ?? ''
+        const title = a.textContent?.trim() ?? ''
+        if (!href || !title) continue
+        // Depth = number of <ol> ancestors inside toc
+        let depth = 0
+        let el: Element | null = li.parentElement
+        while (el && el !== toc) {
+          if (el.tagName === 'OL') depth++
+          el = el.parentElement
+        }
+        chapters.push({ title, wordIndex: hrefToWordIndex(href, navPath), level: Math.max(0, depth - 1) })
+      }
     }
   } else if (ncxPath && zip.file(ncxPath)) {
-    // EPUB 2 NCX
+    // EPUB 2 NCX — flat querySelectorAll, depth by counting ancestor navPoint elements
     const ncxXml = await zip.file(ncxPath)!.async('text')
     const ncx = parseXml(ncxXml)
-    processNcxPoints(ncx.querySelectorAll('navMap > navPoint'), ncxPath, 0)
+    for (const pt of Array.from(ncx.querySelectorAll('navPoint'))) {
+      const title = pt.querySelector('navLabel text')?.textContent?.trim() ?? ''
+      const src = xmlAttr(pt.querySelector('content'), 'src')
+      if (!title || !src) continue
+      // Depth = number of navPoint ancestors
+      let depth = 0
+      let el: Element | null = pt.parentElement
+      while (el) {
+        if (el.tagName === 'navPoint' || el.nodeName === 'navPoint') depth++
+        el = el.parentElement
+      }
+      chapters.push({ title, wordIndex: hrefToWordIndex(src, ncxPath), level: depth })
+    }
   }
 
   // Fallback: one chapter per spine item using OPF dc:title or item id
@@ -144,43 +174,11 @@ export async function parseEpub(file: File): Promise<ParsedEpub> {
 
   return { pdfDoc: null, words, chapters }
 
-  // ── helpers that close over local data ────────────────────────────────────
-
   function hrefToWordIndex(rawHref: string, basePath: string): number {
     const path = resolve(basePath, stripFragment(rawHref))
-    // Find which spine item uses this path
     for (let si = 0; si < spineIds.length; si++) {
-      if (manifest[spineIds[si]] === path) {
-        return spineWordStart[si] ?? 0
-      }
+      if (manifest[spineIds[si]] === path) return spineWordStart[si] ?? 0
     }
     return 0
-  }
-
-  function processNavItems(items: NodeListOf<Element>, basePath: string, level: number) {
-    for (const li of Array.from(items)) {
-      const a = li.querySelector(':scope > a, :scope > span > a')
-      if (a) {
-        const href = xmlAttr(a as Element, 'href')
-        const title = a.textContent?.trim() ?? ''
-        if (href && title) {
-          chapters.push({ title, wordIndex: hrefToWordIndex(href, basePath), level })
-        }
-      }
-      const sub = li.querySelector(':scope > ol')
-      if (sub) processNavItems(sub.querySelectorAll(':scope > li'), basePath, level + 1)
-    }
-  }
-
-  function processNcxPoints(points: NodeListOf<Element>, basePath: string, level: number) {
-    for (const pt of Array.from(points)) {
-      const title = pt.querySelector('navLabel text')?.textContent?.trim() ?? ''
-      const src = xmlAttr(pt.querySelector('content'), 'src')
-      if (title && src) {
-        chapters.push({ title, wordIndex: hrefToWordIndex(src, basePath), level })
-      }
-      const sub = pt.querySelectorAll(':scope > navPoint')
-      if (sub.length) processNcxPoints(sub, basePath, level + 1)
-    }
   }
 }
