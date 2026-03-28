@@ -10,8 +10,8 @@
 
 :root {
   --bg: #000;
-  --bg-panel: #0d0d0d;
-  --bg-surface: #141414;
+  --bg-panel: #111;
+  --bg-surface: #171717;
   --bg-hover: #1a1a1a;
   --border: #2a2a2a;
   --border-guide: rgba(255, 255, 255, 0.15);
@@ -141,8 +141,8 @@ input[type="range"]::-moz-range-thumb {
 .word-display__empty {
   position: relative;
   z-index: 1;
-  color: #333;
-  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
   text-align: center;
   user-select: none;
 }
@@ -266,7 +266,7 @@ input[type="range"]::-moz-range-thumb {
   justify-content: center;
   height: 100%;
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -671,7 +671,7 @@ input[type="range"]::-moz-range-thumb {
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-style: italic;
 }
 
