@@ -32,6 +32,8 @@ export default function App() {
   const minWpmRef = useRef(minWpm)
   const maxWpmRef = useRef(maxWpm)
   const fileNameRef = useRef(fileName)
+  // Rolling 10-second window of word-display timestamps for WPM averaging
+  const wpmWindowRef = useRef<number[]>([])
 
   // Keep refs in sync
   wordIndexRef.current = wordIndex
@@ -65,7 +67,17 @@ export default function App() {
         if (playStateRef.current !== 'playing') return
 
         setWordIndex(index)
-        setCurrentWpm(Math.round(60000 / delay))
+
+        // Rolling 10s WPM average
+        const now2 = performance.now()
+        wpmWindowRef.current.push(now2)
+        const cutoff = now2 - 10_000
+        wpmWindowRef.current = wpmWindowRef.current.filter(t => t >= cutoff)
+        const windowCount = wpmWindowRef.current.length
+        const avgWpm = windowCount > 1
+          ? Math.round((windowCount - 1) / ((now2 - wpmWindowRef.current[0]) / 60_000))
+          : Math.round(60000 / delay)
+        setCurrentWpm(avgWpm)
 
         // Save position to localStorage
         localStorage.setItem(
