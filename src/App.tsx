@@ -313,8 +313,8 @@ export default function App() {
 
       {/* ── Middle 1/3: PDF canvas for PDFs, text context view for EPUBs ── */}
       {pdfDoc
-        ? <PDFPageView pdfDoc={pdfDoc} words={words} currentWordIndex={wordIndex} />
-        : <TextPreview ref={textPreviewRef} words={wordTexts} currentIndex={wordIndex} />
+        ? <PDFPageView pdfDoc={pdfDoc} words={words} currentWordIndex={wordIndex} onSeek={handleSeek} />
+        : <TextPreview ref={textPreviewRef} words={wordTexts} currentIndex={wordIndex} onSeek={handleSeek} />
       }
 
       {/* ── Bottom 1/3: Controls panel ── */}
