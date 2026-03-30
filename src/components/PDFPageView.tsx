@@ -7,12 +7,15 @@ interface PDFPageViewProps {
   words: WordToken[]
   currentWordIndex: number
   onSeek?: (index: number) => void
+  onPrevPage?: () => void
+  onNextPage?: () => void
 }
 
-const PDFPageView: React.FC<PDFPageViewProps> = ({ pdfDoc, words, currentWordIndex, onSeek }) => {
+const PDFPageView: React.FC<PDFPageViewProps> = ({ pdfDoc, words, currentWordIndex, onSeek, onPrevPage, onNextPage }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null)
+  const touchStartXRef = useRef<number | null>(null)
 
   const [highlight, setHighlight] = useState<{
     left: number; top: number; width: number; height: number
@@ -181,8 +184,22 @@ const PDFPageView: React.FC<PDFPageViewProps> = ({ pdfDoc, words, currentWordInd
     [onSeek, words],
   )
 
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX
+  }, [])
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartXRef.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartXRef.current
+    touchStartXRef.current = null
+    if (Math.abs(dx) < 50) return   // too short, ignore
+    if (dx < 0) onNextPage?.()      // swipe left → next page
+    else onPrevPage?.()             // swipe right → prev page
+  }, [onPrevPage, onNextPage])
+
   return (
-    <div className="pdf-page-view" ref={containerRef}>
+    <div className="pdf-page-view" ref={containerRef}
+      onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {!pdfDoc ? (
         <div className="pdf-page-view__empty">PDF preview will appear here</div>
       ) : (
