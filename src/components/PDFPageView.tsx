@@ -6,21 +6,22 @@ interface PDFPageViewProps {
   pdfDoc: PDFDocumentProxy | null
   words: WordToken[]
   currentWordIndex: number
+  onSeek?: (index: number) => void
 }
 
-const PDFPageView: React.FC<PDFPageViewProps> = ({ pdfDoc, words, currentWordIndex }) => {
+const PDFPageView: React.FC<PDFPageViewProps> = ({ pdfDoc, words, currentWordIndex, onSeek }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null)
 
   const [highlight, setHighlight] = useState<{
-    left: number
-    top: number
-    width: number
-    height: number
+    left: number; top: number; width: number; height: number
   } | null>(null)
 
   const currentPageRef = useRef<number>(0)
+  // Cache render scale + natural page height so click handler can invert coords
+  const renderScaleRef = useRef<number>(1)
+  const pageNaturalHeightRef = useRef<number>(0)
 
   const renderPage = useCallback(
     async (pageNum: number) => {
@@ -38,6 +39,8 @@ const PDFPageView: React.FC<PDFPageViewProps> = ({ pdfDoc, words, currentWordInd
       const naturalViewport = page.getViewport({ scale: 1 })
       const scale = containerWidth / naturalViewport.width
       const viewport = page.getViewport({ scale })
+      renderScaleRef.current = scale
+      pageNaturalHeightRef.current = naturalViewport.height
 
       const canvas = canvasRef.current
       canvas.width = viewport.width
@@ -134,12 +137,57 @@ const PDFPageView: React.FC<PDFPageViewProps> = ({ pdfDoc, words, currentWordInd
     renderPage(1)
   }, [pdfDoc, renderPage])
 
+  const handleCanvasClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!onSeek || words.length === 0) return
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const rect = canvas.getBoundingClientRect()
+      const clickX = e.clientX - rect.left
+      const clickY = e.clientY - rect.top
+      const scale = renderScaleRef.current
+      const pageNaturalH = pageNaturalHeightRef.current
+      if (scale === 0 || pageNaturalH === 0) return
+
+      // Convert canvas px → PDF user-space (bottom-left origin)
+      const pdfX = clickX / scale
+      const pdfY = pageNaturalH - clickY / scale
+
+      const pageNum = currentPageRef.current
+      const pageWords = words
+        .map((w, i) => ({ w, i }))
+        .filter(({ w }) => w.pageNum === pageNum)
+
+      if (pageWords.length === 0) return
+
+      // First try: exact hit within word bounding box
+      const exact = pageWords.find(({ w }) =>
+        pdfX >= w.x && pdfX <= w.x + w.w &&
+        pdfY >= w.y && pdfY <= w.y + w.h,
+      )
+      if (exact) { onSeek(exact.i); return }
+
+      // Fallback: nearest word by centre-point distance
+      let best = pageWords[0]
+      let bestDist = Infinity
+      for (const item of pageWords) {
+        const cx = item.w.x + item.w.w / 2
+        const cy = item.w.y + item.w.h / 2
+        const d = Math.hypot(pdfX - cx, pdfY - cy)
+        if (d < bestDist) { bestDist = d; best = item }
+      }
+      onSeek(best.i)
+    },
+    [onSeek, words],
+  )
+
   return (
     <div className="pdf-page-view" ref={containerRef}>
       {!pdfDoc ? (
         <div className="pdf-page-view__empty">PDF preview will appear here</div>
       ) : (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div style={{ position: 'relative', display: 'inline-block', cursor: onSeek ? 'crosshair' : 'default' }}
+          onClick={handleCanvasClick}>
           <canvas ref={canvasRef} style={{ display: 'block' }} />
           {highlight && (
             <div

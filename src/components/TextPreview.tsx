@@ -3,6 +3,7 @@ import React, { forwardRef, useImperativeHandle, useRef, memo } from 'react'
 interface TextPreviewProps {
   words: string[]
   currentIndex: number
+  onSeek?: (index: number) => void
 }
 
 export interface TextPreviewHandle {
@@ -15,7 +16,7 @@ const AFTER = 120
 export const WORDS_PER_LINE = 12
 
 const TextPreviewInner = forwardRef<TextPreviewHandle, TextPreviewProps>(
-  ({ words, currentIndex }, ref) => {
+  ({ words, currentIndex, onSeek }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const lastActiveRef = useRef(-1)
     const lastScrollLineRef = useRef(-1)
@@ -60,8 +61,16 @@ const TextPreviewInner = forwardRef<TextPreviewHandle, TextPreviewProps>(
     const start = Math.max(0, currentIndex - BEFORE)
     const end = Math.min(words.length, currentIndex + AFTER)
 
+    const handleClick = (e: React.MouseEvent) => {
+      if (!onSeek) return
+      const el = (e.target as HTMLElement).closest<HTMLElement>('[data-wi]')
+      if (el?.dataset.wi !== undefined) onSeek(Number(el.dataset.wi))
+    }
+
     return (
-      <div className="text-preview" ref={containerRef}>
+      <div className="text-preview" ref={containerRef}
+        onClick={handleClick}
+        style={{ cursor: onSeek ? 'pointer' : undefined }}>
         <div className="text-preview__content">
           {words.slice(start, end).map((word, si) => {
             const i = start + si

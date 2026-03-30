@@ -217,6 +217,21 @@ input[type="range"]::-moz-range-thumb {
   white-space: pre;
 }
 
+/* Page-tap hint arrows */
+.page-tap {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.6rem;
+  color: rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+  line-height: 1;
+}
+.page-tap--left  { left: 10px; }
+.page-tap--right { right: 10px; }
+
 /* WPM indicator – bottom-right of reader */
 .wpm-indicator {
   position: absolute;
@@ -537,6 +552,93 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text-secondary);
   font-size: 0.65rem;
   font-family: var(--font-mono);
+}
+
+/* ============================================================
+   Resume Dialog
+   ============================================================ */
+
+.resume-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.15s ease;
+}
+
+.resume-dialog {
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px 24px;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resume-dialog__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.resume-dialog__file {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resume-dialog__pct {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.resume-dialog__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.resume-btn {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.resume-btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.resume-btn--primary:hover {
+  background: var(--accent-hover);
+}
+
+.resume-btn--secondary {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.resume-btn--secondary:hover {
+  background: var(--btn-hover);
+  color: var(--text-primary);
 }
 
 /* ============================================================
