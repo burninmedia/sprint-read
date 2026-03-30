@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
 import Controls from './components/Controls'
-import PDFUpload from './components/PDFUpload'
+import LibraryDrawer from './components/LibraryDrawer'
 import PDFPageView from './components/PDFPageView'
 import TextPreview from './components/TextPreview'
 import type { TextPreviewHandle } from './components/TextPreview'
@@ -12,6 +12,11 @@ import { parsePdf } from './utils/pdfParser'
 import { parseEpub } from './utils/epubParser'
 import type { Chapter, WordToken } from './utils/pdfParser'
 import { buildDelayTable } from './utils/speedRamp'
+import {
+  saveBook, loadBookData, deleteBook, getLibraryMeta,
+  getLastOpenedId, updateBookProgress,
+} from './utils/library'
+import type { BookMeta } from './utils/library'
 
 type PlayState = 'idle' | 'playing' | 'paused'
 
@@ -30,6 +35,9 @@ export default function App() {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const [chapters, setChapters] = useState<Chapter[]>([])
   const [showToc, setShowToc] = useState(false)
+  const [showLibrary, setShowLibrary] = useState(false)
+  const [library, setLibrary] = useState<BookMeta[]>(() => getLibraryMeta())
+  const [currentBookId, setCurrentBookId] = useState<string | null>(null)
   const [resumeInfo, setResumeInfo] = useState<{ savedIndex: number; pct: number } | null>(null)
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -41,6 +49,7 @@ export default function App() {
   const minWpmRef = useRef(minWpm)
   const maxWpmRef = useRef(maxWpm)
   const fileNameRef = useRef(fileName)
+  const currentBookIdRef = useRef(currentBookId)
   // Rolling 10-second window of word-display timestamps for WPM averaging
   const wpmWindowRef = useRef<number[]>([])
 
@@ -51,6 +60,7 @@ export default function App() {
   minWpmRef.current = minWpm
   maxWpmRef.current = maxWpm
   fileNameRef.current = fileName
+  currentBookIdRef.current = currentBookId
 
   const acquireWakeLock = useCallback(async () => {
     if (!('wakeLock' in navigator)) return
@@ -114,11 +124,15 @@ export default function App() {
           : Math.round(60000 / delay)
         setCurrentWpm(avgWpm)
 
-        // Save position to localStorage
+        // Save position to localStorage (legacy key kept for resume dialog)
         localStorage.setItem(
           `sprintread-pos:${fileNameRef.current ?? ''}`,
           String(index),
         )
+        // Update library progress every 10 words
+        if (index % 10 === 0 && currentBookIdRef.current) {
+          updateBookProgress(currentBookIdRef.current, index, wordsRef.current.length)
+        }
 
         scheduleNext(index + 1, delayTable, expectedTime + delay)
       }, adjustedDelay)
@@ -220,6 +234,12 @@ export default function App() {
         setChapters(parsed.chapters)
         setCurrentWpm(DEFAULT_MIN_WPM)
 
+        // Save to library (upsert)
+        const bookId = await saveBook(file, parsed.words.length)
+        setCurrentBookId(bookId)
+        currentBookIdRef.current = bookId
+        setLibrary(getLibraryMeta())
+
         // Ask user whether to resume or restart if a saved position exists
         const savedKey = `sprintread-pos:${file.name}`
         const saved = Number(localStorage.getItem(savedKey) ?? 0)
@@ -299,6 +319,73 @@ export default function App() {
   // Cleanup on unmount
   useEffect(() => () => { stopTimer(); releaseWakeLock() }, [stopTimer, releaseWakeLock])
 
+  // Auto-load last opened book on mount
+  useEffect(() => {
+    const lastId = getLastOpenedId()
+    if (!lastId) return
+    setIsLoading(true)
+    loadBookData(lastId).then(async (result) => {
+      if (!result) { setIsLoading(false); return }
+      const { data, meta } = result
+      const file = new File([data], meta.name, {
+        type: meta.fileType === 'epub' ? 'application/epub+zip' : 'application/pdf',
+      })
+      try {
+        const isEpub = meta.fileType === 'epub'
+        const parsed = isEpub ? await parseEpub(file) : await parsePdf(file)
+        setWords(parsed.words)
+        wordsRef.current = parsed.words
+        setPdfDoc(parsed.pdfDoc)
+        setChapters(parsed.chapters)
+        setFileName(meta.name)
+        fileNameRef.current = meta.name
+        setCurrentBookId(meta.id)
+        currentBookIdRef.current = meta.id
+        setCurrentWpm(DEFAULT_MIN_WPM)
+        if (meta.position > 0) {
+          const pct = Math.round((meta.position / parsed.words.length) * 100)
+          setResumeInfo({ savedIndex: meta.position, pct })
+        }
+      } catch (err) {
+        console.error('Failed to auto-load book:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    }).catch(() => setIsLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleLibraryBookOpen = useCallback(async (id: string) => {
+    setShowLibrary(false)
+    const result = await loadBookData(id)
+    if (!result) return
+    const { data, meta } = result
+    const file = new File([data], meta.name, {
+      type: meta.fileType === 'epub' ? 'application/epub+zip' : 'application/pdf',
+    })
+    await handleFileSelected(file)
+  }, [handleFileSelected])
+
+  const handleLibraryDelete = useCallback(async (id: string) => {
+    await deleteBook(id)
+    setLibrary(getLibraryMeta())
+    if (currentBookIdRef.current === id) {
+      stopTimer()
+      releaseWakeLock()
+      setPlayState('idle')
+      setWords([])
+      wordsRef.current = []
+      setWordIndex(0)
+      wordIndexRef.current = 0
+      setPdfDoc(null)
+      setChapters([])
+      setFileName(null)
+      fileNameRef.current = null
+      setCurrentBookId(null)
+      currentBookIdRef.current = null
+    }
+  }, [stopTimer, releaseWakeLock])
+
   const currentWord = words[wordIndex]?.text ?? ''
   const wordTexts = useMemo(() => words.map(w => w.text), [words])
 
@@ -319,13 +406,6 @@ export default function App() {
 
       {/* ── Bottom 1/3: Controls panel ── */}
       <div className="bottom-panel">
-        {/* PDF upload (compact, inline in controls area) */}
-        <PDFUpload
-          onFileSelected={handleFileSelected}
-          isLoading={isLoading}
-          fileName={fileName}
-        />
-
         {/* Playback controls */}
         <Controls
           isPlaying={playState === 'playing'}
@@ -345,7 +425,7 @@ export default function App() {
           onSeek={handleSeek}
           onPrevChapter={handlePrevChapter}
           onNextChapter={handleNextChapter}
-          onFileSelected={handleFileSelected}
+          onLibraryOpen={() => setShowLibrary(true)}
           onTocOpen={() => setShowToc(true)}
         />
       </div>
@@ -367,6 +447,18 @@ export default function App() {
           totalWords={words.length}
           onSeek={handleSeek}
           onClose={() => setShowToc(false)}
+        />
+      )}
+
+      {/* Library drawer */}
+      {showLibrary && (
+        <LibraryDrawer
+          books={library}
+          currentBookId={currentBookId}
+          onOpen={handleLibraryBookOpen}
+          onDelete={handleLibraryDelete}
+          onAddBook={handleFileSelected}
+          onClose={() => setShowLibrary(false)}
         />
       )}
     </div>
