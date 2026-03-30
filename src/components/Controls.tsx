@@ -104,14 +104,6 @@ const Controls: React.FC<ControlsProps> = ({
           </button>
         </div>
 
-        {/* Progress bar */}
-        <div className="controls__progress">
-          <input type="range" className="progress-bar"
-            min={0} max={Math.max(totalWords - 1, 0)}
-            value={wordIndex} disabled={!hasText}
-            onChange={(e) => onSeek(Number(e.target.value))}
-            aria-label="Position" />
-        </div>
       </div>
 
       {/* ── Row 2: speed sliders always visible ── */}
@@ -139,7 +131,7 @@ const Controls: React.FC<ControlsProps> = ({
         </div>
       </div>
 
-      {/* ── Row 3: page nav + book progress (PDF only) ── */}
+      {/* ── Row 3: page nav + scrubber (PDF only) ── */}
       {onPrevPage && onNextPage && (
         <div className="controls__row3">
           <button className="btn btn--icon" onClick={onPrevPage}
@@ -161,6 +153,11 @@ const Controls: React.FC<ControlsProps> = ({
             disabled={!hasText || currentPage === totalPages} title="Next page" aria-label="Next page">
             <PageNextIcon />
           </button>
+          <input type="range" className="progress-bar progress-bar--row3"
+            min={0} max={Math.max(totalWords - 1, 0)}
+            value={wordIndex} disabled={!hasText}
+            onChange={(e) => onSeek(Number(e.target.value))}
+            aria-label="Position" />
         </div>
       )}
     </div>

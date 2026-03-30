@@ -375,6 +375,11 @@ input[type="range"]::-moz-range-thumb {
   flex-shrink: 0;
 }
 
+.progress-bar--row3 {
+  flex: 0 0 80px;
+  width: 80px;
+}
+
 .controls__row2 .speed-control {
   flex: 1 1 0;
   display: flex;
