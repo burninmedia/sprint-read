@@ -18,6 +18,8 @@ interface ControlsProps {
   onSeek: (index: number) => void
   onPrevChapter: () => void
   onNextChapter: () => void
+  onPrevPage?: () => void
+  onNextPage?: () => void
   onLibraryOpen: () => void
   onTocOpen: () => void
 }
@@ -29,6 +31,7 @@ const Controls: React.FC<ControlsProps> = ({
   onPlay, onPause, onStop,
   onMinWpmChange, onMaxWpmChange, onSeek,
   onPrevChapter, onNextChapter,
+  onPrevPage, onNextPage,
   onLibraryOpen, onTocOpen,
 }) => {
   const progress = totalWords > 0 ? (wordIndex / Math.max(totalWords - 1, 1)) * 100 : 0
@@ -64,11 +67,19 @@ const Controls: React.FC<ControlsProps> = ({
             <TocIcon />
           </button>
 
-          {/* Skip prev */}
+          {/* Skip prev chapter */}
           <button className="btn btn--icon" onClick={onPrevChapter}
             disabled={!hasText || !hasChapters} title="Previous chapter" aria-label="Previous chapter">
             <SkipPrevIcon />
           </button>
+
+          {/* Prev page (PDF only) */}
+          {onPrevPage && (
+            <button className="btn btn--icon" onClick={onPrevPage}
+              disabled={!hasText} title="Previous page" aria-label="Previous page">
+              <PagePrevIcon />
+            </button>
+          )}
 
           {/* Stop */}
           <button className="btn btn--icon" onClick={onStop}
@@ -84,7 +95,15 @@ const Controls: React.FC<ControlsProps> = ({
             {isPlaying ? <PauseIcon /> : <PlayIcon />}
           </button>
 
-          {/* Skip next */}
+          {/* Next page (PDF only) */}
+          {onNextPage && (
+            <button className="btn btn--icon" onClick={onNextPage}
+              disabled={!hasText} title="Next page" aria-label="Next page">
+              <PageNextIcon />
+            </button>
+          )}
+
+          {/* Skip next chapter */}
           <button className="btn btn--icon" onClick={onNextChapter}
             disabled={!hasText || !hasChapters} title="Next chapter" aria-label="Next chapter">
             <SkipNextIcon />
@@ -177,6 +196,16 @@ const TocIcon = () => (
     <line x1="3" y1="6" x2="21" y2="6" strokeLinecap="round" />
     <line x1="3" y1="12" x2="15" y2="12" strokeLinecap="round" />
     <line x1="3" y1="18" x2="18" y2="18" strokeLinecap="round" />
+  </svg>
+)
+const PagePrevIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+  </svg>
+)
+const PageNextIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
   </svg>
 )
 const LibraryIcon = () => (

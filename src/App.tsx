@@ -316,6 +316,40 @@ export default function App() {
     }
   }, [chapters, handleSeek])
 
+  // PDF page navigation
+  const handlePrevPage = useCallback(() => {
+    const ws = wordsRef.current
+    if (ws.length === 0) return
+    const currentPage = (ws[wordIndexRef.current] as { pageNum?: number })?.pageNum ?? 1
+    if (currentPage <= 1) return
+    const idx = ws.findIndex(w => (w as { pageNum?: number }).pageNum === currentPage - 1)
+    if (idx >= 0) handleSeek(idx)
+  }, [handleSeek])
+
+  const handleNextPage = useCallback(() => {
+    const ws = wordsRef.current
+    if (ws.length === 0) return
+    const currentPage = (ws[wordIndexRef.current] as { pageNum?: number })?.pageNum ?? 1
+    const idx = ws.findIndex(w => (w as { pageNum?: number }).pageNum === currentPage + 1)
+    if (idx >= 0) handleSeek(idx)
+  }, [handleSeek])
+
+  // Hardware back button (Android): close open drawers instead of exiting the app
+  useEffect(() => {
+    if (showLibrary || showToc) {
+      window.history.pushState({ modal: true }, '')
+    }
+  }, [showLibrary, showToc])
+
+  useEffect(() => {
+    const onPop = () => {
+      if (showLibrary) { setShowLibrary(false); return }
+      if (showToc) { setShowToc(false); return }
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [showLibrary, showToc])
+
   // Cleanup on unmount
   useEffect(() => () => { stopTimer(); releaseWakeLock() }, [stopTimer, releaseWakeLock])
 
@@ -400,7 +434,8 @@ export default function App() {
 
       {/* ── Middle 1/3: PDF canvas for PDFs, text context view for EPUBs ── */}
       {pdfDoc
-        ? <PDFPageView pdfDoc={pdfDoc} words={words} currentWordIndex={wordIndex} onSeek={handleSeek} />
+        ? <PDFPageView pdfDoc={pdfDoc} words={words} currentWordIndex={wordIndex}
+            onSeek={handleSeek} onPrevPage={handlePrevPage} onNextPage={handleNextPage} />
         : <TextPreview ref={textPreviewRef} words={wordTexts} currentIndex={wordIndex} onSeek={handleSeek} />
       }
 
@@ -425,7 +460,9 @@ export default function App() {
           onSeek={handleSeek}
           onPrevChapter={handlePrevChapter}
           onNextChapter={handleNextChapter}
-          onLibraryOpen={() => setShowLibrary(true)}
+          onPrevPage={pdfDoc ? handlePrevPage : undefined}
+          onNextPage={pdfDoc ? handleNextPage : undefined}
+          onLibraryOpen={() => { setLibrary(getLibraryMeta()); setShowLibrary(true) }}
           onTocOpen={() => setShowToc(true)}
         />
       </div>
