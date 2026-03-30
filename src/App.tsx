@@ -6,6 +6,7 @@ import PDFPageView from './components/PDFPageView'
 import TextPreview from './components/TextPreview'
 import type { TextPreviewHandle } from './components/TextPreview'
 import TocDrawer from './components/TocDrawer'
+import ResumeDialog from './components/ResumeDialog'
 import WordDisplay from './components/WordDisplay'
 import { parsePdf } from './utils/pdfParser'
 import { parseEpub } from './utils/epubParser'
@@ -29,6 +30,7 @@ export default function App() {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const [chapters, setChapters] = useState<Chapter[]>([])
   const [showToc, setShowToc] = useState(false)
+  const [resumeInfo, setResumeInfo] = useState<{ savedIndex: number; pct: number } | null>(null)
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
@@ -218,12 +220,17 @@ export default function App() {
         setChapters(parsed.chapters)
         setCurrentWpm(DEFAULT_MIN_WPM)
 
-        // Restore saved position
+        // Ask user whether to resume or restart if a saved position exists
         const savedKey = `sprintread-pos:${file.name}`
         const saved = Number(localStorage.getItem(savedKey) ?? 0)
-        const startIndex = Math.min(saved, parsed.words.length - 1)
-        setWordIndex(startIndex)
-        wordIndexRef.current = startIndex
+        const savedIndex = Math.min(saved, parsed.words.length - 1)
+        if (savedIndex > 0) {
+          const pct = Math.round((savedIndex / parsed.words.length) * 100)
+          setResumeInfo({ savedIndex, pct })
+        } else {
+          setWordIndex(0)
+          wordIndexRef.current = 0
+        }
       } catch (err) {
         console.error('Failed to parse file:', err)
         alert('Failed to extract text from this file. Try a different file.')
@@ -235,6 +242,32 @@ export default function App() {
     },
     [stopTimer],
   )
+
+  // Page navigation — jump ±250 words
+  const PAGE_WORDS = 250
+  const handlePageBack = useCallback(() => {
+    const idx = Math.max(0, wordIndexRef.current - PAGE_WORDS)
+    handleSeek(idx)
+  }, [handleSeek])
+
+  const handlePageForward = useCallback(() => {
+    const idx = Math.min((wordsRef.current.length - 1), wordIndexRef.current + PAGE_WORDS)
+    handleSeek(idx)
+  }, [handleSeek])
+
+  // Resume dialog handlers
+  const handleResume = useCallback(() => {
+    if (!resumeInfo) return
+    setWordIndex(resumeInfo.savedIndex)
+    wordIndexRef.current = resumeInfo.savedIndex
+    setResumeInfo(null)
+  }, [resumeInfo])
+
+  const handleRestart = useCallback(() => {
+    setWordIndex(0)
+    wordIndexRef.current = 0
+    setResumeInfo(null)
+  }, [])
 
   // Chapter navigation
   const handlePrevChapter = useCallback(() => {
@@ -271,8 +304,12 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* ── Top 1/3: Word reader ── */}
-      <WordDisplay word={currentWord} wpm={currentWpm} isEmpty={words.length === 0} />
+      {/* ── Top 1/3: Word reader — tap left/right to page back/forward ── */}
+      <WordDisplay
+        word={currentWord} wpm={currentWpm} isEmpty={words.length === 0}
+        onPageBack={words.length > 0 ? handlePageBack : undefined}
+        onPageForward={words.length > 0 ? handlePageForward : undefined}
+      />
 
       {/* ── Middle 1/3: PDF canvas for PDFs, text context view for EPUBs ── */}
       {pdfDoc
@@ -312,6 +349,16 @@ export default function App() {
           onTocOpen={() => setShowToc(true)}
         />
       </div>
+      {/* Resume / restart dialog */}
+      {resumeInfo && fileName && (
+        <ResumeDialog
+          fileName={fileName}
+          savedPct={resumeInfo.pct}
+          onResume={handleResume}
+          onRestart={handleRestart}
+        />
+      )}
+
       {/* TOC drawer – rendered outside panels so it overlays everything */}
       {showToc && (
         <TocDrawer

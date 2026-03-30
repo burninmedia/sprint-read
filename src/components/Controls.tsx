@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 
 interface ControlsProps {
   isPlaying: boolean
@@ -34,6 +34,25 @@ const Controls: React.FC<ControlsProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const progress = totalWords > 0 ? (wordIndex / Math.max(totalWords - 1, 1)) * 100 : 0
   const hasChapters = chapters.length > 0
+
+  // Local string state so the user can type freely; only commit on blur/Enter
+  const [minInput, setMinInput] = useState(String(minWpm))
+  const [maxInput, setMaxInput] = useState(String(maxWpm))
+  useEffect(() => setMinInput(String(minWpm)), [minWpm])
+  useEffect(() => setMaxInput(String(maxWpm)), [maxWpm])
+
+  const commitMin = (raw: string) => {
+    const v = Math.max(100, Math.min(500, parseInt(raw, 10) || minWpm))
+    setMinInput(String(v))
+    onMinWpmChange(v)
+    if (v + 100 > maxWpm) onMaxWpmChange(v + 100)
+  }
+  const commitMax = (raw: string) => {
+    const v = Math.max(200, Math.min(1200, parseInt(raw, 10) || maxWpm))
+    setMaxInput(String(v))
+    onMaxWpmChange(v)
+    if (v - 100 < minWpm) onMinWpmChange(Math.max(100, v - 100))
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -111,24 +130,22 @@ const Controls: React.FC<ControlsProps> = ({
         <div className="speed-control">
           <label className="speed-label" htmlFor="wpm-min">Min WPM</label>
           <input id="wpm-min" type="number" className="wpm-input"
-            min={100} max={500} step={20} value={minWpm}
-            onChange={(e) => {
-              const v = Math.max(100, Math.min(500, Number(e.target.value)))
-              onMinWpmChange(v)
-              if (v + 100 > maxWpm) onMaxWpmChange(v + 100)
-            }}
+            min={100} max={500} step={20}
+            value={minInput}
+            onChange={(e) => setMinInput(e.target.value)}
+            onBlur={(e) => commitMin(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && commitMin((e.target as HTMLInputElement).value)}
             aria-label="Minimum WPM" />
         </div>
 
         <div className="speed-control">
           <label className="speed-label" htmlFor="wpm-max">Max WPM</label>
           <input id="wpm-max" type="number" className="wpm-input"
-            min={200} max={1200} step={20} value={maxWpm}
-            onChange={(e) => {
-              const v = Math.max(200, Math.min(1200, Number(e.target.value)))
-              onMaxWpmChange(v)
-              if (v - 100 < minWpm) onMinWpmChange(Math.max(100, v - 100))
-            }}
+            min={200} max={1200} step={20}
+            value={maxInput}
+            onChange={(e) => setMaxInput(e.target.value)}
+            onBlur={(e) => commitMax(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && commitMax((e.target as HTMLInputElement).value)}
             aria-label="Maximum WPM" />
         </div>
       </div>
