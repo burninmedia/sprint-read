@@ -20,6 +20,8 @@ interface ControlsProps {
   onNextChapter: () => void
   onPrevPage?: () => void
   onNextPage?: () => void
+  currentPage?: number
+  totalPages?: number
   onLibraryOpen: () => void
   onTocOpen: () => void
 }
@@ -32,6 +34,7 @@ const Controls: React.FC<ControlsProps> = ({
   onMinWpmChange, onMaxWpmChange, onSeek,
   onPrevChapter, onNextChapter,
   onPrevPage, onNextPage,
+  currentPage, totalPages,
   onLibraryOpen, onTocOpen,
 }) => {
   const progress = totalWords > 0 ? (wordIndex / Math.max(totalWords - 1, 1)) * 100 : 0
@@ -73,14 +76,6 @@ const Controls: React.FC<ControlsProps> = ({
             <SkipPrevIcon />
           </button>
 
-          {/* Prev page (PDF only) */}
-          {onPrevPage && (
-            <button className="btn btn--icon" onClick={onPrevPage}
-              disabled={!hasText} title="Previous page" aria-label="Previous page">
-              <PagePrevIcon />
-            </button>
-          )}
-
           {/* Stop */}
           <button className="btn btn--icon" onClick={onStop}
             disabled={!hasText} title="Stop" aria-label="Stop">
@@ -94,14 +89,6 @@ const Controls: React.FC<ControlsProps> = ({
             title={isPlaying ? 'Pause' : 'Play'} aria-label={isPlaying ? 'Pause' : 'Play'}>
             {isPlaying ? <PauseIcon /> : <PlayIcon />}
           </button>
-
-          {/* Next page (PDF only) */}
-          {onNextPage && (
-            <button className="btn btn--icon" onClick={onNextPage}
-              disabled={!hasText} title="Next page" aria-label="Next page">
-              <PageNextIcon />
-            </button>
-          )}
 
           {/* Skip next chapter */}
           <button className="btn btn--icon" onClick={onNextChapter}
@@ -158,6 +145,23 @@ const Controls: React.FC<ControlsProps> = ({
             aria-label="Maximum WPM" />
         </div>
       </div>
+
+      {/* ── Row 3: PDF page navigation (PDF only) ── */}
+      {onPrevPage && onNextPage && (
+        <div className="controls__row3">
+          <button className="btn btn--icon" onClick={onPrevPage}
+            disabled={!hasText || currentPage === 1} title="Previous page" aria-label="Previous page">
+            <PagePrevIcon />
+          </button>
+          <span className="page-label">
+            {currentPage && totalPages ? `Page ${currentPage} / ${totalPages}` : 'Page —'}
+          </span>
+          <button className="btn btn--icon" onClick={onNextPage}
+            disabled={!hasText || currentPage === totalPages} title="Next page" aria-label="Next page">
+            <PageNextIcon />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

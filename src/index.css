@@ -324,9 +324,27 @@ input[type="range"]::-moz-range-thumb {
 .controls__row2 {
   display: flex;
   gap: 12px;
-  padding: 4px 12px 10px;
+  padding: 4px 12px 6px;
   flex: 0 0 auto;
   align-items: flex-end;
+}
+
+/* Row 3: PDF page navigation */
+.controls__row3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 2px 12px 8px;
+  flex: 0 0 auto;
+}
+
+.page-label {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.75);
+  min-width: 100px;
+  text-align: center;
+  letter-spacing: 0.02em;
 }
 
 .controls__row2 .speed-control {

@@ -422,6 +422,8 @@ export default function App() {
 
   const currentWord = words[wordIndex]?.text ?? ''
   const wordTexts = useMemo(() => words.map(w => w.text), [words])
+  const currentPage = pdfDoc ? ((words[wordIndex] as { pageNum?: number })?.pageNum ?? 1) : undefined
+  const totalPages = pdfDoc ? pdfDoc.numPages : undefined
 
   return (
     <div className="app">
@@ -462,6 +464,8 @@ export default function App() {
           onNextChapter={handleNextChapter}
           onPrevPage={pdfDoc ? handlePrevPage : undefined}
           onNextPage={pdfDoc ? handleNextPage : undefined}
+          currentPage={currentPage}
+          totalPages={totalPages}
           onLibraryOpen={() => { setLibrary(getLibraryMeta()); setShowLibrary(true) }}
           onTocOpen={() => setShowToc(true)}
         />
