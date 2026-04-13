@@ -66,6 +66,8 @@ input[type="range"] {
   appearance: none;
   background: transparent;
   cursor: pointer;
+  display: block;   /* block so width:100% is reliable on Android WebView */
+  width: 100%;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
@@ -329,13 +331,18 @@ input[type="range"]::-moz-range-thumb {
   align-items: flex-end;
 }
 
-/* Row 3: PDF page nav + book progress */
+/* Row 3: PDF page nav + book progress.
+   CSS Grid is used instead of Flexbox because grid's 1fr column is the
+   most reliable way to stretch the scrubber to the right edge on Android
+   WebView — flex on input[type=range] is inconsistent across devices. */
 .controls__row3 {
-  display: flex;
+  display: grid;
+  grid-template-columns: 44px auto 44px 1fr;
   align-items: center;
-  gap: 8px;
+  column-gap: 8px;
   padding: 2px 0 8px 12px;
-  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .page-progress-label {
