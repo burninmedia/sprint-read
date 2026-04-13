@@ -104,21 +104,6 @@ const Controls: React.FC<ControlsProps> = ({
           </button>
         </div>
 
-        {/* Progress bar */}
-        <div className="controls__progress">
-          <input type="range" className="progress-bar"
-            min={0} max={Math.max(totalWords - 1, 0)}
-            value={wordIndex} disabled={!hasText}
-            onChange={(e) => onSeek(Number(e.target.value))}
-            aria-label="Position" />
-          <div className="progress-info">
-            <span>{fileName
-              ? <span className="progress-filename">{fileName.replace(/\.pdf$/i, '').slice(0, 20)}</span>
-              : 'No file'}</span>
-            <span className="progress-pct">{Math.round(progress)}%</span>
-            <span>{totalWords > 0 ? totalWords.toLocaleString() : '—'}</span>
-          </div>
-        </div>
       </div>
 
       {/* ── Row 2: speed sliders always visible ── */}
@@ -146,20 +131,33 @@ const Controls: React.FC<ControlsProps> = ({
         </div>
       </div>
 
-      {/* ── Row 3: PDF page navigation (PDF only) ── */}
+      {/* ── Row 3: page nav + scrubber (PDF only) ── */}
       {onPrevPage && onNextPage && (
         <div className="controls__row3">
           <button className="btn btn--icon" onClick={onPrevPage}
             disabled={!hasText || currentPage === 1} title="Previous page" aria-label="Previous page">
             <PagePrevIcon />
           </button>
-          <span className="page-label">
-            {currentPage && totalPages ? `Page ${currentPage} / ${totalPages}` : 'Page —'}
-          </span>
+          <div className="page-progress-label">
+            <span className="page-label">
+              {currentPage && totalPages ? `Page ${currentPage} / ${totalPages}` : 'Page —'}
+            </span>
+            {fileName && (
+              <span className="page-book-info">
+                <span className="progress-filename">{fileName.replace(/\.(pdf|epub)$/i, '').slice(0, 22)}</span>
+                <span className="progress-pct">{Math.round(progress)}%</span>
+              </span>
+            )}
+          </div>
           <button className="btn btn--icon" onClick={onNextPage}
             disabled={!hasText || currentPage === totalPages} title="Next page" aria-label="Next page">
             <PageNextIcon />
           </button>
+          <input type="range" className="progress-bar progress-bar--row3"
+            min={0} max={Math.max(totalWords - 1, 0)}
+            value={wordIndex} disabled={!hasText}
+            onChange={(e) => onSeek(Number(e.target.value))}
+            aria-label="Position" />
         </div>
       )}
     </div>
