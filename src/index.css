@@ -317,9 +317,10 @@ input[type="range"]::-moz-range-thumb {
 .controls__row1 {
   display: flex;
   align-items: center;
-  gap: 8px;
   padding: 8px 12px 4px;
   flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Row 2: min/max WPM inputs side-by-side */
@@ -340,7 +341,7 @@ input[type="range"]::-moz-range-thumb {
   grid-template-columns: 44px auto 44px 1fr;
   align-items: center;
   column-gap: 8px;
-  padding: 2px 0 8px 12px;
+  padding: 2px 12px 8px 12px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -402,9 +403,9 @@ input[type="range"]::-moz-range-thumb {
 
 .controls__buttons {
   display: flex;
-  gap: 6px;
   align-items: center;
-  flex: 0 0 auto;
+  justify-content: space-evenly;
+  flex: 1 1 auto;
 }
 
 .btn {
