@@ -153,11 +153,13 @@ const Controls: React.FC<ControlsProps> = ({
             disabled={!hasText || currentPage === totalPages} title="Next page" aria-label="Next page">
             <PageNextIcon />
           </button>
-          <input type="range" className="progress-bar progress-bar--row3"
-            min={0} max={Math.max(totalWords - 1, 0)}
-            value={wordIndex} disabled={!hasText}
-            onChange={(e) => onSeek(Number(e.target.value))}
-            aria-label="Position" />
+          <div className="row3-scrubber">
+            <input type="range" className="progress-bar"
+              min={0} max={Math.max(totalWords - 1, 0)}
+              value={wordIndex} disabled={!hasText}
+              onChange={(e) => onSeek(Number(e.target.value))}
+              aria-label="Position" />
+          </div>
         </div>
       )}
     </div>

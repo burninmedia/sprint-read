@@ -374,10 +374,15 @@ input[type="range"]::-moz-range-thumb {
   flex-shrink: 0;
 }
 
-.progress-bar--row3 {
+.row3-scrubber {
   flex: 1 1 0;
-  width: 0;        /* override .progress-bar width:100% so flex sizing works */
   min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.row3-scrubber .progress-bar {
+  width: 100%;
 }
 
 .controls__row2 .speed-control {
