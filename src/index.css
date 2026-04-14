@@ -212,6 +212,26 @@ input[type="range"]::-moz-range-thumb {
   text-shadow: 0 0 16px rgba(231, 76, 60, 0.55);
 }
 
+/* Extension #2 — Noted Quoting: amber ORP focus letter inside quoted text */
+.orp-letter--quoted {
+  color: #f0b429;
+  text-shadow: 0 0 16px rgba(240, 180, 41, 0.55);
+}
+
+/* Faint opening-quote mark in the top-left of the reader area */
+.quote-indicator {
+  position: absolute;
+  top: 12px;
+  left: 18px;
+  font-size: 2.4rem;
+  line-height: 1;
+  color: rgba(240, 180, 41, 0.3);
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+  font-family: Georgia, serif;
+}
+
 .orp-after {
   display: inline-block;
   text-align: left;

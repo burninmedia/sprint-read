@@ -20,6 +20,23 @@ import type { BookMeta } from './utils/library'
 
 type PlayState = 'idle' | 'playing' | 'paused'
 
+/**
+ * Extension #2 – Noted Quoting.
+ * Track whether the reader is currently inside double-quoted text.
+ * Curly quotes open/close explicitly; straight quotes toggle state.
+ */
+function updateQuoteState(word: string, inQuotes: boolean): boolean {
+  let state = inQuotes
+  // Opening curly quotes always start a quoted section
+  if (/[\u201C\u2018]/.test(word)) state = true
+  // Closing curly quotes always end a quoted section
+  if (/[\u201D\u2019]/.test(word)) state = false
+  // Straight double-quotes toggle (each occurrence flips state)
+  const straight = (word.match(/"/g) ?? []).length
+  for (let i = 0; i < straight; i++) state = !state
+  return state
+}
+
 const DEFAULT_MIN_WPM = 200
 const DEFAULT_MAX_WPM = 900
 
@@ -39,6 +56,8 @@ export default function App() {
   const [library, setLibrary] = useState<BookMeta[]>(() => getLibraryMeta())
   const [currentBookId, setCurrentBookId] = useState<string | null>(null)
   const [isPausing, setIsPausing] = useState(false)
+  const [isQuoted, setIsQuoted] = useState(false)
+  const isQuotedRef = useRef(false)
   const [resumeInfo, setResumeInfo] = useState<{ savedIndex: number; pct: number } | null>(null)
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -115,6 +134,11 @@ export default function App() {
         setIsPausing(false)
         textPreviewRef.current?.updateHighlight(index)
 
+        // Update quote state — track whether we're inside double quotes
+        const wordText = wordsRef.current[index]?.text ?? ''
+        isQuotedRef.current = updateQuoteState(wordText, isQuotedRef.current)
+        setIsQuoted(isQuotedRef.current)
+
         // Rolling 10s WPM average
         const now2 = performance.now()
         wpmWindowRef.current.push(now2)
@@ -137,7 +161,6 @@ export default function App() {
         }
 
         // Sentence-end blank pause: show word for full delay, then blank for one base-word duration
-        const wordText = wordsRef.current[index]?.text ?? ''
         const isSentenceEnd = /[.!?]['")\]]*$/.test(wordText)
         if (isSentenceEnd) {
           const baseDelay = delay / 2.2   // strip the sentence-end multiplier to get base word time
@@ -242,6 +265,8 @@ export default function App() {
       setIsLoading(true)
       setFileName(file.name)
       fileNameRef.current = file.name
+      setIsQuoted(false)
+      isQuotedRef.current = false
 
       try {
         const isEpub = file.name.toLowerCase().endsWith('.epub')
@@ -448,6 +473,7 @@ export default function App() {
       {/* ── Top 1/3: Word reader — tap left/right to page back/forward ── */}
       <WordDisplay
         word={isPausing ? '' : currentWord} wpm={currentWpm} isEmpty={words.length === 0}
+        isQuoted={isQuoted}
         onPageBack={words.length > 0 ? handlePageBack : undefined}
         onPageForward={words.length > 0 ? handlePageForward : undefined}
       />
