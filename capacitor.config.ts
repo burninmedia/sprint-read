@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
-  appId: 'com.sprintread.app',
+  appId: 'com.burninmedia.sprintread.app',
   appName: 'SprintRead',
   webDir: 'dist',
   server: {
