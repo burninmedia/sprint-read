@@ -38,6 +38,7 @@ export default function App() {
   const [showLibrary, setShowLibrary] = useState(false)
   const [library, setLibrary] = useState<BookMeta[]>(() => getLibraryMeta())
   const [currentBookId, setCurrentBookId] = useState<string | null>(null)
+  const [isPausing, setIsPausing] = useState(false)
   const [resumeInfo, setResumeInfo] = useState<{ savedIndex: number; pct: number } | null>(null)
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -111,6 +112,7 @@ export default function App() {
         if (playStateRef.current !== 'playing') return
 
         setWordIndex(index)
+        setIsPausing(false)
         textPreviewRef.current?.updateHighlight(index)
 
         // Rolling 10s WPM average
@@ -134,7 +136,23 @@ export default function App() {
           updateBookProgress(currentBookIdRef.current, index, wordsRef.current.length)
         }
 
-        scheduleNext(index + 1, delayTable, expectedTime + delay)
+        // Sentence-end blank pause: show word for full delay, then blank for one base-word duration
+        const wordText = wordsRef.current[index]?.text ?? ''
+        const isSentenceEnd = /[.!?]['")\]]*$/.test(wordText)
+        if (isSentenceEnd) {
+          const baseDelay = delay / 2.2   // strip the sentence-end multiplier to get base word time
+          timerRef.current = setTimeout(() => {
+            if (playStateRef.current !== 'playing') return
+            setIsPausing(true)
+            timerRef.current = setTimeout(() => {
+              if (playStateRef.current !== 'playing') return
+              setIsPausing(false)
+              scheduleNext(index + 1, delayTable, expectedTime + delay + baseDelay)
+            }, baseDelay)
+          }, adjustedDelay)
+        } else {
+          scheduleNext(index + 1, delayTable, expectedTime + delay)
+        }
       }, adjustedDelay)
     },
     [],
@@ -429,7 +447,7 @@ export default function App() {
     <div className="app">
       {/* ── Top 1/3: Word reader — tap left/right to page back/forward ── */}
       <WordDisplay
-        word={currentWord} wpm={currentWpm} isEmpty={words.length === 0}
+        word={isPausing ? '' : currentWord} wpm={currentWpm} isEmpty={words.length === 0}
         onPageBack={words.length > 0 ? handlePageBack : undefined}
         onPageForward={words.length > 0 ? handlePageForward : undefined}
       />

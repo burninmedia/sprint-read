@@ -66,6 +66,8 @@ input[type="range"] {
   appearance: none;
   background: transparent;
   cursor: pointer;
+  display: block;   /* block so width:100% is reliable on Android WebView */
+  width: 100%;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
@@ -308,16 +310,17 @@ input[type="range"]::-moz-range-thumb {
   flex-direction: column;
   gap: 0;
   background: var(--bg-surface);
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Row 1: transport buttons + progress bar */
 .controls__row1 {
   display: flex;
   align-items: center;
-  gap: 8px;
   padding: 8px 12px 4px;
   flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Row 2: min/max WPM inputs side-by-side */
@@ -329,18 +332,22 @@ input[type="range"]::-moz-range-thumb {
   align-items: flex-end;
 }
 
-/* Row 3: PDF page nav + book progress */
+/* Row 3: PDF page nav + book progress.
+   CSS Grid is used instead of Flexbox because grid's 1fr column is the
+   most reliable way to stretch the scrubber to the right edge on Android
+   WebView — flex on input[type=range] is inconsistent across devices. */
 .controls__row3 {
-  display: flex;
+  display: grid;
+  grid-template-columns: 44px auto 44px 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 2px 0 8px 12px;
-  flex: 0 0 auto;
+  column-gap: 8px;
+  padding: 2px 12px 8px 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .page-progress-label {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -375,9 +382,15 @@ input[type="range"]::-moz-range-thumb {
   flex-shrink: 0;
 }
 
-.progress-bar--row3 {
+.row3-scrubber {
   flex: 1 1 0;
   min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.row3-scrubber .progress-bar {
+  width: 100%;
 }
 
 .controls__row2 .speed-control {
@@ -390,9 +403,9 @@ input[type="range"]::-moz-range-thumb {
 
 .controls__buttons {
   display: flex;
-  gap: 6px;
   align-items: center;
-  flex: 0 0 auto;
+  justify-content: space-evenly;
+  flex: 1 1 auto;
 }
 
 .btn {

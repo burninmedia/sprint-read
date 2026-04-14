@@ -47,8 +47,12 @@ export async function parsePdf(file: File): Promise<ParsedPdf> {
 
     pageFirstWordIndex.set(pageNum, words.length)
 
+    // Track whether the previous item ended without a trailing space so we
+    // can merge text items that belong to the same word (e.g. ligature splits).
+    let prevItemNoTrailingSpace = false
+
     for (const item of textContent.items) {
-      if (!('str' in item) || !item.str.trim()) continue
+      if (!('str' in item)) continue
 
       // transform: [scaleX, skewX, skewY, scaleY, tx, ty]
       const tx = item.transform[4] as number
@@ -57,23 +61,42 @@ export async function parsePdf(file: File): Promise<ParsedPdf> {
       const itemHeight = (item as { height?: number }).height ?? 0
       const str = item.str
 
-      // Split item string into individual words and estimate x offset proportionally
+      if (!str) { prevItemNoTrailingSpace = false; continue }
+
+      const startsWithSpace = str[0] === ' '
+      const endsWithSpace = str[str.length - 1] === ' '
       const rawTokens = str.split(/\s+/)
       let charOffset = 0
 
-      for (const token of rawTokens) {
+      for (let ti = 0; ti < rawTokens.length; ti++) {
+        const token = rawTokens[ti]
         if (!token) continue
+
         const wordX = tx + (charOffset / Math.max(str.length, 1)) * itemWidth
-        words.push({
-          text: token,
-          pageNum,
-          x: wordX,
-          y: ty,
-          w: (token.length / Math.max(str.length, 1)) * itemWidth,
-          h: itemHeight,
-        })
-        // +1 for the space
+        const wordW = (token.length / Math.max(str.length, 1)) * itemWidth
+
+        // If the previous item had no trailing space AND the current item has no
+        // leading space AND this is the very first token in the item, it's a
+        // continuation of the previous word (e.g. ligature or kerning split).
+        if (ti === 0 && prevItemNoTrailingSpace && !startsWithSpace && words.length > 0) {
+          words[words.length - 1].text += token
+          words[words.length - 1].w += wordW
+        } else {
+          words.push({ text: token, pageNum, x: wordX, y: ty, w: wordW, h: itemHeight })
+        }
+
         charOffset += token.length + 1
+      }
+
+      prevItemNoTrailingSpace = !endsWithSpace && rawTokens.filter(Boolean).length > 0
+    }
+
+    // Post-process: merge tokens that are purely closing punctuation with the
+    // preceding word (e.g. standalone ")" or "]" from PDF text extraction).
+    for (let i = words.length - 1; i > 0; i--) {
+      if (/^[)\]}'""»]+$/.test(words[i].text) && words[i].pageNum === words[i - 1].pageNum) {
+        words[i - 1].text += words[i].text
+        words.splice(i, 1)
       }
     }
   }
