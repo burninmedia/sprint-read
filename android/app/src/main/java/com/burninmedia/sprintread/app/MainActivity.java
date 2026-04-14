@@ -1,4 +1,4 @@
-package com.sprintread.app;
+package com.burninmedia.sprintread.app;
 
 import android.os.Bundle;
 import androidx.core.view.WindowCompat;
